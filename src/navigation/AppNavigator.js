@@ -21,7 +21,7 @@ const Stack = createStackNavigator();
 
 const AppNavigator = () => {
   // Récupération de l'état d'authentification depuis le contexte
-  const { isAuthenticated } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   return (
     <NavigationContainer>
@@ -31,13 +31,12 @@ const AppNavigator = () => {
           cardStyle: { backgroundColor: '#fff' },
         }}
       >
-        {!isAuthenticated ? (
+        {!user ? (
           // Utilisateur non connecté - affichage de l'onboarding et de l'authentification
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Goals" component={GoalsScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Auth" component={AuthNavigator} />
           </>
         ) : (
           // Utilisateur connecté - affichage de l'application principale
