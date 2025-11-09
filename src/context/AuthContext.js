@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { saveUserData, getUserData, clearUserData } from '../services/database/userDataDB';
 
 export const AuthContext = createContext();
 
@@ -16,7 +17,9 @@ export const AuthProvider = ({ children }) => {
     }
     // Simule un appel API
     await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({ email: e, name: e.split('@')[0] || 'Utilisateur' });
+    const newUser = { email: e, name: e.split('@')[0] || 'Utilisateur' };
+    setUser(newUser);
+    await saveUserData(newUser).catch(() => {});
     setIsLoading(false);
     return true;
   }, []);
@@ -32,13 +35,23 @@ export const AuthProvider = ({ children }) => {
     }
     // Simule un appel API
     await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser({ name: n, email: e });
+    const newUser = { name: n, email: e };
+    setUser(newUser);
+    await saveUserData(newUser).catch(() => {});
     setIsLoading(false);
     return true;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setUser(null);
+    await clearUserData().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    // Charger l'utilisateur persistant au démarrage
+    getUserData()
+      .then((u) => { if (u) setUser(u); })
+      .catch(() => {});
   }, []);
 
   return (

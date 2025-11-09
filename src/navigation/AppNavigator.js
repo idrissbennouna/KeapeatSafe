@@ -32,12 +32,8 @@ const AppNavigator = () => {
         }}
       >
         {!user ? (
-          // Utilisateur non connecté - affichage de l'onboarding et de l'authentification
-          <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Goals" component={GoalsScreen} />
-            <Stack.Screen name="Auth" component={AuthNavigator} />
-          </>
+          // Utilisateur non connecté - affichage de l'authentification
+          <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : (
           // Utilisateur connecté - affichage de l'application principale
           <Stack.Screen name="AppTabs" component={TabNavigator} />
