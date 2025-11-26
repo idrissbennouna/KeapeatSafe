@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import des écrans principaux
@@ -18,7 +18,7 @@ const Tab = createBottomTabNavigator();
 const TabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.gray,
         tabBarStyle: styles.tabBar,
@@ -26,7 +26,14 @@ const TabNavigator = () => {
         headerStyle: styles.header,
         headerTintColor: colors.white,
         headerTitleStyle: styles.headerTitle,
-      }}
+        headerTitleAlign: 'center',
+        headerLeft: () =>
+          navigation?.canGoBack?.() ? (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackBtn} accessibilityRole="button" accessibilityLabel="Retour">
+              <Ionicons name="arrow-back" size={24} color={colors.white} />
+            </TouchableOpacity>
+          ) : null,
+      })}
     >
       <Tab.Screen
         name="Dashboard"
@@ -109,6 +116,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  headerBackBtn: {
+    paddingHorizontal: 12,
   },
 });
 

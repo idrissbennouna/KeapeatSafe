@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { PlanningContext } from '../../context/PlanningContext';
 import colors from '../../styles/colors';
@@ -8,6 +8,11 @@ const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dima
 
 const PlanningScreen = () => {
   const { mealPlan, selectedDay, setSelectedDay, loadMealPlan, resetPlanning } = useContext(PlanningContext);
+
+  // Assure le chargement du plan au montage de l’écran
+  useEffect(() => {
+    loadMealPlan && loadMealPlan();
+  }, [loadMealPlan]);
 
   const meals = Array.isArray(mealPlan?.[selectedDay]) ? mealPlan[selectedDay] : [];
 

@@ -30,6 +30,9 @@ module.exports = {
     web: {
       favicon: "./assets/favicon.png"
     },
+    plugins: [
+      'expo-font'
+    ],
     extra: {
       API_NINJAS_KEY: process.env.API_NINJAS_KEY
     }

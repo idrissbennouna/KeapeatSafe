@@ -14,18 +14,31 @@ const STORAGE_KEY = 'MEAL_PLAN';
  */
 export const generateWeeklyPlan = (userGoals = {}) => {
   const daily = Number(userGoals.dailyCalories || 2000);
-  const perMeal = Math.round(daily / 3);
+  const distribution = {
+    'petit-dej': 0.25,
+    'dejeuner': 0.35,
+    'diner': 0.40,
+  };
 
   const plan = {};
-  for (const day of DAYS) {
-    plan[day] = TYPES.map(type => ({
-      id: `${day}-${type}`,
-      type,
-      title: `${type} équilibré`,
-      calories: perMeal,
-      ingredients: [],
-    }));
-  }
+  DAYS.forEach((day, idx) => {
+    // petite variation quotidienne (±5%) pour éviter des jours identiques
+    const variance = 1 + ((idx % 3) - 1) * 0.05; // -5%, 0, +5%
+    plan[day] = TYPES.map(type => {
+      const base = Math.round(daily * distribution[type]);
+      const calories = Math.max(200, Math.round(base * variance));
+      return {
+        id: `${day}-${type}`,
+        type,
+        title: `${type} du ${day}`,
+        calories,
+        ingredients: [
+          { name: 'yaourt', quantity_g: 125 },
+          { name: 'banane', quantity_g: 100 },
+        ],
+      };
+    });
+  });
   return plan;
 };
 
@@ -38,7 +51,14 @@ export const saveMealPlanToDB = async (plan) => {
 /** Récupère le planning en base locale */
 export const getMealPlanFromDB = async () => {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : null;
+  const plan = raw ? JSON.parse(raw) : null;
+  // Si le plan est vide (aucun repas), force une régénération
+  if (plan && typeof plan === 'object') {
+    const allDays = DAYS.every(d => Array.isArray(plan[d]));
+    const allEmpty = DAYS.every(d => Array.isArray(plan[d]) && plan[d].length === 0);
+    if (allDays && allEmpty) return null;
+  }
+  return plan;
 };
 
 /** Met à jour un repas dans le plan sauvegardé */
@@ -65,10 +85,17 @@ export const removeMealFromPlan = async (day, mealType) => {
   return plan;
 };
 
+/** Efface complètement le planning sauvegardé */
+export const clearMealPlanFromDB = async () => {
+  await AsyncStorage.removeItem(STORAGE_KEY);
+  return true;
+};
+
 export default {
   generateWeeklyPlan,
   saveMealPlanToDB,
   getMealPlanFromDB,
   updateMealInPlan,
   removeMealFromPlan,
+  clearMealPlanFromDB,
 };

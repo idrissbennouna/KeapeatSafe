@@ -16,12 +16,12 @@ export function calculateBMI(weight, height) {
   const bmi = Number(bmiRaw.toFixed(1));
 
   // 2️⃣ Déterminer la catégorie correspondante (WHO)
-  let category = "normal";
-  if (bmi < 18.5) category = "maigre";
-  else if (bmi >= 18.5 && bmi < 25) category = "normal";
-  else if (bmi >= 25 && bmi < 30) category = "surpoids";
-  else category = "obésité";
+  let interpretation = "normal";
+  if (bmi < 18.5) interpretation = "maigre";
+  else if (bmi >= 18.5 && bmi < 25) interpretation = "normal";
+  else if (bmi >= 25 && bmi < 30) interpretation = "surpoids";
+  else interpretation = "obésité";
 
-  // 3️⃣ Retourner { bmi, category }
-  return { bmi, category };
+  // 3️⃣ Retourner un objet cohérent avec le contexte
+  return { value: bmi, interpretation };
 }

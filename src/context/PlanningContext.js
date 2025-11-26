@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect, useContext } from 'react';
-import { saveMealPlanToDB, getMealPlanFromDB, generateWeeklyPlan } from '../services/api/mealPlanningAPI';
+import { saveMealPlanToDB, getMealPlanFromDB, generateWeeklyPlan, clearMealPlanFromDB } from '../services/api/mealPlanningAPI';
 import { NutritionContext } from './NutritionContext';
 
 export const PlanningContext = createContext();
@@ -36,12 +36,12 @@ export const PlanningProvider = ({ children }) => {
     });
   }, []);
 
-  const resetPlanning = useCallback(() => {
-    setMealPlan(() => {
-      saveMealPlanToDB(initialMealPlan).catch(() => {});
-      return initialMealPlan;
-    });
-  }, []);
+  const resetPlanning = useCallback(async () => {
+    await clearMealPlanFromDB().catch(() => {});
+    const plan = generateWeeklyPlan({ dailyCalories: Number(dailyCalories) || 2000 });
+    setMealPlan(plan);
+    await saveMealPlanToDB(plan).catch(() => {});
+  }, [dailyCalories]);
 
   // Charge le planning sauvegardé ou génère un plan hebdo basique
   const loadMealPlan = useCallback(async () => {

@@ -8,28 +8,20 @@ const API_NINJAS_KEY = Constants.expoConfig?.extra?.API_NINJAS_KEY;
 
 /**
  * Cherche des recettes par mot-clé/ingrédient
- * options.provider: 'apiNinjas' | 'edamam'
- * options.apiKey / options.appId / options.appKey
+ * Provider unique: API Ninjas
+ * options.apiKey: clé API Ninjas
  */
 export const fetchRecipes = async (query, options = {}) => {
   const q = String(query || '').trim();
   if (!q) throw new Error('Requête de recherche manquante');
 
-  const provider = options.provider || 'apiNinjas';
   const apiKey = options.apiKey || API_NINJAS_KEY;
   let url = '';
   const headers = {};
 
-  if (provider === 'apiNinjas') {
-    if (!apiKey) throw new Error('API key manquante pour API Ninjas');
-    url = `https://api.api-ninjas.com/v1/recipe?query=${encodeURIComponent(q)}`;
-    headers['X-Api-Key'] = apiKey;
-  } else if (provider === 'edamam') {
-    if (!options.appId || !options.appKey) throw new Error('Identifiants Edamam manquants');
-    url = `https://api.edamam.com/search?q=${encodeURIComponent(q)}&app_id=${options.appId}&app_key=${options.appKey}`;
-  } else {
-    throw new Error(`Provider inconnu: ${provider}`);
-  }
+  if (!apiKey) throw new Error('API key manquante pour API Ninjas');
+  url = `https://api.api-ninjas.com/v1/recipe?query=${encodeURIComponent(q)}`;
+  headers['X-Api-Key'] = apiKey;
 
   const res = await fetch(url, { headers });
   if (!res.ok) {
@@ -38,49 +30,20 @@ export const fetchRecipes = async (query, options = {}) => {
   }
   const data = await res.json();
 
-  // Normalisation simple: API Ninjas retourne directement un tableau, Edamam utilise hits
-  const list = Array.isArray(data)
-    ? data
-    : Array.isArray(data.hits)
-      ? data.hits.map(h => ({
-          id: h.recipe.uri,
-          title: h.recipe.label,
-          ingredients: h.recipe.ingredientLines,
-          image: h.recipe.image,
-          calories: h.recipe.calories,
-          dietLabels: h.recipe.dietLabels,
-          healthLabels: h.recipe.healthLabels,
-        }))
-      : [];
+  // API Ninjas retourne directement un tableau
+  const list = Array.isArray(data) ? data : [];
 
   return list;
 };
 
 /**
- * Obtient les détails d’une recette (selon provider)
- * Pour API Ninjas: les items sont déjà détaillés; pour Edamam: l’URI sert d’identifiant.
+ * Obtient les détails d’une recette (API Ninjas)
+ * Les items retournés par API Ninjas sont déjà complets.
  */
 export const getRecipeDetails = async (idOrRecipe, options = {}) => {
   if (!idOrRecipe) throw new Error('Identifiant/recette manquant');
-  const provider = options.provider || 'apiNinjas';
-
-  // API Ninjas: l’élément est déjà complet
-  if (provider === 'apiNinjas') {
-    return typeof idOrRecipe === 'object' ? idOrRecipe : { id: idOrRecipe };
-  }
-
-  // Edamam: refaire une recherche par URI (simple fallback)
-  if (provider === 'edamam') {
-    if (!options.appId || !options.appKey) throw new Error('Identifiants Edamam manquants');
-    const uri = encodeURIComponent(String(idOrRecipe));
-    const url = `https://api.edamam.com/search?r=${uri}&app_id=${options.appId}&app_key=${options.appKey}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Échec détails recette (${res.status})`);
-    const data = await res.json();
-    return Array.isArray(data) && data[0] ? data[0] : null;
-  }
-
-  throw new Error(`Provider inconnu: ${provider}`);
+  // API Ninjas: l’élément est déjà complet ou identifiable
+  return typeof idOrRecipe === 'object' ? idOrRecipe : { id: idOrRecipe };
 };
 
 /**

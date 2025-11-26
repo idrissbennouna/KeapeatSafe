@@ -2,18 +2,19 @@ import React, { createContext, useState, useCallback } from 'react';
 import { calculateCalories } from '../services/calculations/calorieCalculator';
 import { calculateMacros } from '../services/calculations/macroCalculator';
 import { calculateBMI } from '../services/calculations/bmiCalculator';
-import { fetchNutritionData, calculateTotalCalories } from '../services/api/nutritionAPI';
+import { fetchNutritionData, calculateTotalCalories } from '../services/api/nutritionApi';
 
 export const NutritionContext = createContext();
 
 export const NutritionProvider = ({ children }) => {
-  const [dailyCalories, setDailyCalories] = useState(0);
-  const [macros, setMacros] = useState({ protein: 0, carbs: 0, fat: 0 });
+  // Valeurs par défaut pour éviter un profil vide
+  const [dailyCalories, setDailyCalories] = useState(2000);
+  const [macros, setMacros] = useState(calculateMacros(2000));
   const [bmi, setBmi] = useState({ value: 0, interpretation: '' });
   const [meals, setMeals] = useState([]);
 
   const updateNutritionData = useCallback((weight, height, age, gender, activity) => {
-    const calories = calculateCalories(gender, weight, height, age, activity);
+    const calories = calculateCalories(weight, height, age, gender, activity);
     const macrosData = calculateMacros(calories);
     const bmiData = calculateBMI(weight, height);
 
