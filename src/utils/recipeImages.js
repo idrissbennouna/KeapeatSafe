@@ -47,10 +47,11 @@ export const RECIPE_TITLE_IMAGE_MAP = {
   "empanada pastry (basic recipe)": require('../../assets/images/recipes/dessert.jpg'),
   "ella julia rhubarb dessert": require('../../assets/images/recipes/rhubarb.jpg'),
   "hoppin john (vegetarian)": require('../../assets/images/recipes/hoppin.jpg'),
-  "electronic gourmet garlic and herb salade dr": require('../../assets/images/salad.png'),
-  "electronic gourmet french onion soup": require('../../assets/images/soup.jpg'),
-  "ellen's beef stew": require('../../assets/images/beef.jpg'),
-  "elegant and easy white rice": require('../../assets/images/rice.png'),
+  "electronic gourmet garlic and herb salade dr": require('../../assets/images/recipes/cu.webp'),
+  "electronic gourmet french onion soup": require('../../assets/images/recipes/fren.webp'),
+  "ellen's beef stew": require('../../assets/images/recipes/beef-stew.webp'),
+  "elegant and easy white rice": require('../../assets/images/recipes/buttered-rice-main.webp'),
+  "elegant fondue chocolate(sweet)":require('../../assets/images/recipes/fo.webp'),
 };
 
 // Liste des mots-clés de catégories à éviter dans la recherche par texte
@@ -398,7 +399,7 @@ export const RECIPE_CATEGORY_MAP = {
   ],
   'pasta': [
     'emerald pea pasta',
-    'broccoli cheese soup',
+    
   ],
   'sushi': [
     'salmon sushi',
@@ -419,6 +420,7 @@ export const RECIPE_CATEGORY_MAP = {
   'healthy': [
     'electronic gourmet garlic and herb salade dr',
     'electronic gourmet french onion soup',
+    'broccoli cheese soup',
   ],
   'seafood': [
     'elegant and easy gourmet geflite fish pate',
@@ -427,11 +429,11 @@ export const RECIPE_CATEGORY_MAP = {
   ],
   'moroccan': [
     'ghouribi',
-    'broccoli cheese soup', // Ajout pour avoir plus de recettes
+     
   ],
   'oriental': [
     'golden tofu wrap with warm asian slaw',
-    'broccoli cheese soup',
+   
   ],
   'sweets': [
     'chocolate butter sweets',
@@ -439,11 +441,9 @@ export const RECIPE_CATEGORY_MAP = {
   ],
   'drinks': [
     'mexican sunset',
-    'fresh mint ice cream with chocolate sauce', // Ajout pour avoir plus de recettes
   ],
   'icecream': [
     'fresh mint ice cream with chocolate sauce',
-    'chocolate butter sweets', // Ajout pour avoir plus de recettes
   ],
   'bakery': [
     'empanada pastry (basic recipe)',

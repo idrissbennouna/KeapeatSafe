@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { saveUserData, getUserData, clearUserData } from '../services/database/userDataDB';
+import { verifyLogin, hashPassword, requestPasswordReset as apiRequestPasswordReset, resetPassword as apiResetPassword } from '../services/api/authAPI';
 
 export const AuthContext = createContext();
 
@@ -7,24 +8,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = useCallback(async (email, password) => {
+  const defaultPreferences = { diet: '', favoriteCategories: [], allergies: [] };
+
+  const login = useCallback(async (email, password, preferences = {}) => {
     setIsLoading(true);
-    const e = String(email || '').trim();
-    const p = String(password || '');
-    if (!e || !p || p.length < 6) {
+    try {
+      const verified = await verifyLogin(email, password);
+      const prefs = { ...defaultPreferences, ...(verified?.preferences || {}), ...(preferences || {}) };
+      const newUser = { ...verified, preferences: prefs };
+      setUser(newUser);
+      await saveUserData(newUser).catch(() => {});
+      return true;
+    } finally {
       setIsLoading(false);
-      throw new Error('Identifiants invalides');
     }
-    // Simule un appel API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newUser = { email: e, name: e.split('@')[0] || 'Utilisateur' };
-    setUser(newUser);
-    await saveUserData(newUser).catch(() => {});
-    setIsLoading(false);
-    return true;
   }, []);
 
-  const register = useCallback(async (name, email, password) => {
+  const register = useCallback(async (name, email, password, preferences = {}) => {
     setIsLoading(true);
     const n = String(name || '').trim();
     const e = String(email || '').trim();
@@ -33,9 +33,8 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(false);
       throw new Error("Informations d’inscription invalides");
     }
-    // Simule un appel API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const newUser = { name: n, email: e };
+    const h = await hashPassword(p);
+    const newUser = { name: n, email: e, passwordHash: h, preferences: { ...defaultPreferences, ...(preferences || {}) } };
     setUser(newUser);
     await saveUserData(newUser).catch(() => {});
     setIsLoading(false);
@@ -48,14 +47,40 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Charger l'utilisateur persistant au démarrage
     getUserData()
-      .then((u) => { if (u) setUser(u); })
+      .then((u) => {
+        if (u) {
+          const normalized = { ...u, preferences: { ...defaultPreferences, ...(u.preferences || {}) } };
+          setUser(normalized);
+        }
+      })
       .catch(() => {});
   }, []);
 
+  const updatePreferences = useCallback(async (prefs = {}) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), preferences: { ...defaultPreferences, ...(prev?.preferences || {}), ...(prefs || {}) } };
+      saveUserData(next).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  const requestPasswordReset = useCallback(async (email) => {
+    const code = await apiRequestPasswordReset(email);
+    return code;
+  }, []);
+
+  const resetPassword = useCallback(async (email, token, newPassword) => {
+    const ok = await apiResetPassword(email, token, newPassword);
+    if (ok) {
+      const u = await getUserData().catch(() => null);
+      if (u) setUser(u);
+    }
+    return ok;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updatePreferences, requestPasswordReset, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

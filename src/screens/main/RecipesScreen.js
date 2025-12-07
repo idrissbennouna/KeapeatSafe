@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useContext } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, Image, Animated } from 'react-native';
-import { fetchRecipes } from '../../services/api/recipesAPI';
+import { fetchRecipes, filterRecipes } from '../../services/api/recipesAPI';
 import colors from '../../styles/colors';
 import globalStyles from '../../styles/globalStyles';
+import { AuthContext } from '../../context/AuthContext';
 import { 
   RECIPE_IMAGE_MAP, 
   getRecipeImage, 
@@ -18,6 +19,7 @@ const RecipesScreen = () => {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const { user } = useContext(AuthContext) || {};
 
   const CATEGORY_FILTERS = [
     { key: 'tacos', label: 'Tacos', query: 'tacos', imageKey: 'tacos' },
@@ -38,6 +40,12 @@ const RecipesScreen = () => {
     { key: 'dessert', label: 'Dessert', query: 'dessert', imageKey: 'dessert' },
     { key: 'vegetarian', label: 'Vegetarian', query: 'vegetarian', imageKey: 'vegetarian' },
   ];
+  const CATEGORY_EXCLUDES = {
+    healthy: ["electronic gourmet's garlic and herb salad dr"],
+    seafood: ["elegant and easy gourmet gefilte fish pate"],
+    dessert: ["ella julia's rhubarb dessert"],
+    vegetarian: ["hoppin' john (vegetarian)"],
+  };
 
   const handleSearch = async () => {
     const q = String(query || '').trim();
@@ -133,10 +141,17 @@ const RecipesScreen = () => {
         apiRecipes = [];
       }
 
+      // Appliquer le filtre lié au profil (diet)
+      const dietPref = String(user?.preferences?.diet || user?.diet || '').toLowerCase().trim();
+      const dietType = ['vegetarian', 'vegan', 'gluten_free'].includes(dietPref) ? dietPref : '';
+      const apiAfterDiet = dietType ? filterRecipes(apiRecipes, dietType) : apiRecipes;
+
       // ÉTAPE 3 : Filtrer les recettes API pour éviter les doublons avec les spécifiques
       const excludedRecipes = getExcludedRecipesForCategory(cat.key) || [];
-      const filteredApiRecipes = apiRecipes.filter((item) => {
-        const title = String(item.title || item.name || '').toLowerCase().trim();
+      const catExcludes = (CATEGORY_EXCLUDES[cat.key] || []).map(s => s.toLowerCase().trim());
+      const filteredApiRecipes = apiAfterDiet.filter((item) => {
+        const rawTitle = String(item.title || item.name || '').trim();
+        const title = rawTitle.toLowerCase().trim();
         if (!title) return false;
         
         // Vérifier si cette recette est déjà dans les spécifiques
@@ -147,9 +162,9 @@ const RecipesScreen = () => {
         if (isInSpecific) return false;
         
         // Vérifier si exclue
-        const isExcluded = excludedRecipes.some(excluded => 
-          title === excluded || title.includes(excluded)
-        );
+        const isExcludedNormalized = excludedRecipes.some(excluded => title === excluded || title.includes(excluded));
+        const isUppercaseVariant = catExcludes.includes(title) && /[A-Z]/.test(rawTitle);
+        const isExcluded = isExcludedNormalized || isUppercaseVariant;
         return !isExcluded;
       });
 
@@ -195,8 +210,11 @@ const RecipesScreen = () => {
       setLoading(true);
       try {
         // Chargement initial simple
-        const list = await fetchRecipes('pasta'); 
-        setRecipes(Array.isArray(list) ? list : []);
+        const list = await fetchRecipes('pasta');
+        const dietPref = String(user?.preferences?.diet || user?.diet || '').toLowerCase().trim();
+        const dietType = ['vegetarian', 'vegan', 'gluten_free'].includes(dietPref) ? dietPref : '';
+        const filtered = dietType ? filterRecipes(Array.isArray(list) ? list : [], dietType) : (Array.isArray(list) ? list : []);
+        setRecipes(filtered);
       } catch (e) {
         setError('Erreur de chargement initial');
       } finally {
@@ -204,7 +222,7 @@ const RecipesScreen = () => {
       }
     };
     loadDefaults();
-  }, []);
+  }, [user?.preferences?.diet, user?.diet]);
 
   const renderItem = ({ item }) => {
     const title = item.title || item.name || 'Recette';
