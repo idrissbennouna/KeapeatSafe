@@ -8,13 +8,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const defaultPreferences = { diet: '', favoriteCategories: [], allergies: [], activity: '', weightKg: 0, heightCm: 0, ageYears: 0, gender: '' };
+  const defaultPreferences = { diet: '', favoriteCategories: [], allergies: [], activity: '', weightKg: 0, heightCm: 0, ageYears: 0, gender: '', onboardingComplete: false };
 
   const login = useCallback(async (email, password, preferences = {}) => {
     setIsLoading(true);
     try {
       const verified = await verifyLogin(email, password);
       const prefs = { ...defaultPreferences, ...(verified?.preferences || {}), ...(preferences || {}) };
+      if (typeof prefs.onboardingComplete === 'undefined') {
+        prefs.onboardingComplete = true;
+      }
       const newUser = { ...verified, preferences: prefs };
       setUser(newUser);
       await saveUserData(newUser).catch(() => {});
@@ -51,6 +54,9 @@ export const AuthProvider = ({ children }) => {
       .then((u) => {
         if (u) {
           const normalized = { ...u, preferences: { ...defaultPreferences, ...(u.preferences || {}) } };
+          if (typeof normalized.preferences.onboardingComplete === 'undefined') {
+            normalized.preferences.onboardingComplete = true;
+          }
           setUser(normalized);
         }
       })

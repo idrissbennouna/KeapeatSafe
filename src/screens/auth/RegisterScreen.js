@@ -42,12 +42,13 @@ const RegisterScreen = () => {
         ageYears: Number(age) || 0,
         gender: String(gender || '').trim(),
         favoriteCategories: [],
+        onboardingComplete: false,
       };
       await register(name, email, password, prefs);
       const g = prefs.gender || '';
       const a = prefs.activity || '';
       await updateNutritionData(Number(weight) || 0, Number(height) || 0, Number(age) || 0, g, a);
-      navigation.navigate('Login');
+      
     } catch (e) {
       setError(e.message || "Échec de l’inscription");
     }

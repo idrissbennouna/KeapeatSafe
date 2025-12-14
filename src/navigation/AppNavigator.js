@@ -6,6 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 // Import des écrans d'onboarding
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import GoalsScreen from '../screens/onboarding/GoalsScreen';
+import AboutAppScreen from '../screens/onboarding/AboutAppScreen';
 
 // Import des écrans d'authentification
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -53,10 +54,13 @@ const AppNavigator = () => {
         }}
       >
         {!user ? (
-          // Utilisateur non connecté - affichage de l'authentification
           <Stack.Screen name="Auth" component={AuthNavigator} />
+        ) : !user?.preferences?.onboardingComplete ? (
+          <>
+            <Stack.Screen name="OnboardingWelcome" component={WelcomeScreen} />
+            <Stack.Screen name="OnboardingAbout" component={AboutAppScreen} />
+          </>
         ) : (
-          // Utilisateur connecté - affichage de l'application principale
           <Stack.Screen name="AppTabs" component={TabNavigator} />
         )}
       </Stack.Navigator>

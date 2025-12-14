@@ -51,7 +51,9 @@ export const RECIPE_TITLE_IMAGE_MAP = {
   "electronic gourmet french onion soup": require('../../assets/images/recipes/fren.webp'),
   "ellen's beef stew": require('../../assets/images/recipes/beef-stew.webp'),
   "elegant and easy white rice": require('../../assets/images/recipes/buttered-rice-main.webp'),
-  "elegant fondue chocolate(sweet)":require('../../assets/images/recipes/fo.webp'),
+  "elegant fondue chocolate(sweet)": require('../../assets/images/recipes/fo.webp'),
+  "elegant fondue chocolate (sweet)": require('../../assets/images/recipes/fo.webp'),
+  "elegant fondue chocolate": require('../../assets/images/recipes/fo.webp'),
 };
 
 // Liste des mots-clés de catégories à éviter dans la recherche par texte
@@ -100,13 +102,14 @@ export const findImageByExactTitle = (title) => {
 // PRIORITÉ : 1) Titre exact, 2) Recherche dans titre (sans catégories), 3) Ingrédients, 4) Image par défaut
 export const getRecipeImage = (recipe) => {
   if (!recipe) return require('../../assets/icon.png');
+  const titleInput = recipe.title || recipe.name || '';
   
   // 1. PRIORITÉ MAXIMALE : Chercher par titre exact dans RECIPE_TITLE_IMAGE_MAP
-  const exactTitleImage = findImageByExactTitle(recipe.title);
+  const exactTitleImage = findImageByExactTitle(titleInput);
   if (exactTitleImage) return exactTitleImage;
   
   // 2. Chercher dans le titre avec exclusion des mots-clés de catégories
-  const titleImage = findImageByText(recipe.title, true);
+  const titleImage = findImageByText(titleInput, true);
   if (titleImage) return titleImage;
   
   // 3. Chercher dans les ingrédients avec exclusion des catégories
