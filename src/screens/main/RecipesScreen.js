@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, Image, Animated } from 'react-native';
-import { fetchRecipes, filterRecipes } from '../../services/api/recipesAPI';
+import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator, TouchableOpacity, ScrollView, Image, Animated, PixelRatio, Dimensions } from 'react-native';
+import { fetchRecipes } from '../../services/api/recipesAPI';
 import colors from '../../styles/colors';
 import globalStyles from '../../styles/globalStyles';
-import { AuthContext } from '../../context/AuthContext';
+ 
 import { 
   RECIPE_IMAGE_MAP, 
   getRecipeImage, 
@@ -19,7 +19,7 @@ const RecipesScreen = () => {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const { user } = useContext(AuthContext) || {};
+  
 
   const CATEGORY_FILTERS = [
     { key: 'tacos', label: 'Tacos', query: 'tacos', imageKey: 'tacos' },
@@ -84,10 +84,24 @@ const RecipesScreen = () => {
     return inTitle || inIngredients;
   };
 
+  
+
   const getCategoryImageSource = (imageKey) => {
     if (!imageKey) return null;
     const image = RECIPE_IMAGE_MAP[imageKey];
     return image || null;
+  };
+
+  const getImageDpSize = (source, desiredW, desiredH) => {
+    try {
+      const res = Image.resolveAssetSource(source) || {};
+      const pr = PixelRatio.get();
+      const maxW = Math.floor((res.width || desiredW) / pr);
+      const maxH = Math.floor((res.height || desiredH) / pr);
+      return { width: Math.min(desiredW, maxW), height: Math.min(desiredH, maxH) };
+    } catch {
+      return { width: desiredW, height: desiredH };
+    }
   };
 
   const handleSelectCategory = async (cat) => {
@@ -141,15 +155,10 @@ const RecipesScreen = () => {
         apiRecipes = [];
       }
 
-      // Appliquer le filtre lié au profil (diet)
-      const dietPref = String(user?.preferences?.diet || user?.diet || '').toLowerCase().trim();
-      const dietType = ['vegetarian', 'vegan', 'gluten_free'].includes(dietPref) ? dietPref : '';
-      const apiAfterDiet = dietType ? filterRecipes(apiRecipes, dietType) : apiRecipes;
-
       // ÉTAPE 3 : Filtrer les recettes API pour éviter les doublons avec les spécifiques
       const excludedRecipes = getExcludedRecipesForCategory(cat.key) || [];
       const catExcludes = (CATEGORY_EXCLUDES[cat.key] || []).map(s => s.toLowerCase().trim());
-      const filteredApiRecipes = apiAfterDiet.filter((item) => {
+      const filteredApiRecipes = apiRecipes.filter((item) => {
         const rawTitle = String(item.title || item.name || '').trim();
         const title = rawTitle.toLowerCase().trim();
         if (!title) return false;
@@ -169,7 +178,7 @@ const RecipesScreen = () => {
       });
 
       // ÉTAPE 4 : Combiner spécifiques + API (spécifiques en premier)
-      const allRecipes = [...specificRecipes, ...filteredApiRecipes];
+      let allRecipes = [...specificRecipes, ...filteredApiRecipes];
       
       // Supprimer les doublons
       const uniqueRecipes = [];
@@ -211,10 +220,7 @@ const RecipesScreen = () => {
       try {
         // Chargement initial simple
         const list = await fetchRecipes('pasta');
-        const dietPref = String(user?.preferences?.diet || user?.diet || '').toLowerCase().trim();
-        const dietType = ['vegetarian', 'vegan', 'gluten_free'].includes(dietPref) ? dietPref : '';
-        const filtered = dietType ? filterRecipes(Array.isArray(list) ? list : [], dietType) : (Array.isArray(list) ? list : []);
-        setRecipes(filtered);
+        setRecipes(Array.isArray(list) ? list : []);
       } catch (e) {
         setError('Erreur de chargement initial');
       } finally {
@@ -222,7 +228,7 @@ const RecipesScreen = () => {
       }
     };
     loadDefaults();
-  }, [user?.preferences?.diet, user?.diet]);
+  }, []);
 
   const renderItem = ({ item }) => {
     const title = item.title || item.name || 'Recette';
@@ -233,23 +239,25 @@ const RecipesScreen = () => {
     const imageSource = getRecipeImage(item);
     
     return (
-      <TouchableOpacity style={styles.card} activeOpacity={0.8}
+      <TouchableOpacity style={styles.card} activeOpacity={0.9}
         onPress={() => setRecipes(prev => prev.map(r => r === item ? { ...r, _expanded: !r._expanded } : r))}
       >
-        <View style={styles.cardRow}>
+        <View style={styles.cardImageWrap}>
           {imageSource ? (
-            <Image 
-              source={imageSource} 
-              style={styles.cardThumb} 
+            <Image
+              source={imageSource}
+              style={styles.cardImage}
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.cardThumb, { backgroundColor: colors.surfaceLight }]} />
+            <View style={[styles.cardImage, { backgroundColor: colors.surfaceLight }]} />
           )}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cardTitle}>{title}</Text>
-            <Text style={styles.cardSub}>{ingredients.length} ingrédient(s)</Text>
+          <View style={styles.cardOverlay}>
+            <Text style={styles.cardTitleOverlay} numberOfLines={2}>{title}</Text>
           </View>
+        </View>
+        <View style={styles.cardMetaRow}>
+          <Text style={styles.cardSub}>{ingredients.length} ingrédient(s)</Text>
         </View>
         {item._expanded && (
           <View style={{ marginTop: 8 }}>
@@ -286,6 +294,7 @@ const RecipesScreen = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesRow}>
           {CATEGORY_FILTERS.map((cat) => {
             const categoryImage = getCategoryImageSource(cat.imageKey);
+            const chipDims = categoryImage ? getImageDpSize(categoryImage, 40, 40) : { width: 40, height: 40 };
             return (
               <TouchableOpacity
                 key={cat.key}
@@ -294,7 +303,7 @@ const RecipesScreen = () => {
                 activeOpacity={0.7}
               >
                 {categoryImage && (
-                  <Image source={categoryImage} style={styles.chipImage} resizeMode="cover" />
+                  <Image source={categoryImage} style={[styles.chipImage, { width: chipDims.width, height: chipDims.height }]} resizeMode="cover" />
                 )}
                 <Text style={[styles.chipText, selectedCategory === cat.key && styles.chipTextActive]}>{cat.label}</Text>
               </TouchableOpacity>
@@ -312,7 +321,7 @@ const RecipesScreen = () => {
       {error && <Text style={styles.error}>{error}</Text>}
 
       {!loading && (
-        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <View style={{ flex: 1 }}>
           <FlatList
             data={recipes}
             keyExtractor={(item, index) => String(item.id || item.uri || index)}
@@ -329,7 +338,7 @@ const RecipesScreen = () => {
               </View>
             }
           />
-        </Animated.View>
+        </View>
       )}
     </View>
   );
@@ -344,18 +353,20 @@ const styles = StyleSheet.create({
   list: { gap: 8, paddingBottom: 20 },
   emptyContainer: { padding: 20, alignItems: 'center', justifyContent: 'center' },
   empty: { textAlign: 'center', color: colors.textSecondary, fontSize: 14 },
-  card: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceLight },
-  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardThumb: { width: 80, height: 80, borderRadius: 8, backgroundColor: '#eee' },
-  cardTitle: { fontSize: 16, fontWeight: '600', flexWrap: 'wrap' },
+  card: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white, elevation: 2 },
+  cardImageWrap: { borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
+  cardImage: { width: '100%', height: 220, backgroundColor: '#eee' },
+  cardOverlay: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.35)' },
+  cardTitleOverlay: { color: colors.white, fontSize: 20, fontWeight: '700' },
+  cardMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardSub: { color: colors.textSecondary, marginTop: 4, fontSize: 12 },
-  ingredientItem: { color: colors.textPrimary, marginTop: 2, fontSize: 13 },
+  ingredientItem: { color: colors.textPrimary, marginTop: 2, fontSize: 16, lineHeight: 22 },
   categoriesRow: { paddingHorizontal: 4, gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceLight, marginRight: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.textPrimary, fontWeight: '500' },
   chipTextActive: { color: colors.white },
-  chipImage: { width: 28, height: 28, borderRadius: 14 },
+  chipImage: { width: 40, height: 40, borderRadius: 20 },
 });
 
 export default RecipesScreen;

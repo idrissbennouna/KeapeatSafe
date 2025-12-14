@@ -62,14 +62,50 @@ export const filterRecipes = (recipes = [], filterType) => {
     return labels.every(l => all.includes(l));
   };
 
+  const normalizeIngredients = (raw) => {
+    if (Array.isArray(raw)) return raw.map(s => String(s).toLowerCase().trim());
+    if (typeof raw === 'string') return raw.split(/[\,\n•\-|]/).map(s => String(s).toLowerCase().trim()).filter(Boolean);
+    return [];
+  };
+  const containsAny = (text, terms) => {
+    const t = String(text || '').toLowerCase();
+    return terms.some(k => t.includes(k));
+  };
+
+  const meat = ['beef','boeuf','pork','porc','bacon','lard','ham','jambon','sausage','saucisse','lamb','agneau','turkey','dinde','chicken','poulet','duck','canard'];
+  const fish = ['fish','poisson','salmon','saumon','tuna','thon','cod','cabillaud','morue','sardine','sardines','anchovy','anchois'];
+  const shellfish = ['shrimp','crevette','prawn','crab','crabe','lobster','homard','oyster','huître','huitre','mussel','moule','clam','palourde'];
+  const dairy = ['milk','lait','dairy','cream','crème','creme','cheese','fromage','butter','beurre','yogurt','yaourt'];
+  const eggs = ['egg','eggs','œuf','oeuf'];
+  const honey = ['honey','miel'];
+  const gluten = ['gluten','wheat','farine','semoule','semolina','orge','barley','seigle','rye','bread','breads','pasta','spaghetti','noodles','couscous','cracker','biscuits'];
+
   if (type === 'vegetarian') {
-    return recipes.filter(r => hasLabel(r, ['vegetarian']) || r.isVegetarian === true);
+    return recipes.filter(r => {
+      if (hasLabel(r, ['vegetarian']) || r.isVegetarian === true) return true;
+      const title = String(r.title || r.name || '');
+      const ing = normalizeIngredients(r.ingredients || r.ingredientLines || []);
+      const hasMeat = containsAny(title, [...meat, ...fish, ...shellfish]) || ing.some(i => containsAny(i, [...meat, ...fish, ...shellfish]));
+      return !hasMeat;
+    });
   }
   if (type === 'vegan') {
-    return recipes.filter(r => hasLabel(r, ['vegan']) || r.isVegan === true);
+    return recipes.filter(r => {
+      if (hasLabel(r, ['vegan']) || r.isVegan === true) return true;
+      const title = String(r.title || r.name || '');
+      const ing = normalizeIngredients(r.ingredients || r.ingredientLines || []);
+      const hasAnimal = containsAny(title, [...meat, ...fish, ...shellfish, ...dairy, ...eggs, ...honey]) || ing.some(i => containsAny(i, [...meat, ...fish, ...shellfish, ...dairy, ...eggs, ...honey]));
+      return !hasAnimal;
+    });
   }
   if (type === 'gluten_free') {
-    return recipes.filter(r => hasLabel(r, ['gluten-free']) || r.isGlutenFree === true);
+    return recipes.filter(r => {
+      if (hasLabel(r, ['gluten-free']) || r.isGlutenFree === true) return true;
+      const title = String(r.title || r.name || '');
+      const ing = normalizeIngredients(r.ingredients || r.ingredientLines || []);
+      const hasGlu = containsAny(title, gluten) || ing.some(i => containsAny(i, gluten));
+      return !hasGlu;
+    });
   }
   return recipes;
 };

@@ -15,6 +15,7 @@ const AuthNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        cardStyle: { backgroundColor: '#ffffff' },
         // Transition douce entre Login et Register (slide from right) si disponible
         ...slidePreset,
         // Optionnel: style de carte pour un léger fondu

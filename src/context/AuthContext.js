@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const defaultPreferences = { diet: '', favoriteCategories: [], allergies: [] };
+  const defaultPreferences = { diet: '', favoriteCategories: [], allergies: [], activity: '', weightKg: 0, heightCm: 0, ageYears: 0, gender: '' };
 
   const login = useCallback(async (email, password, preferences = {}) => {
     setIsLoading(true);
