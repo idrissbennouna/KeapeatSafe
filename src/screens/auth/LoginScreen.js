@@ -34,10 +34,15 @@ const LoginScreen = () => {
         <Input label="Mot de passe" placeholder="••••••" value={password} onChangeText={setPassword} secureTextEntry />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button title="Se connecter" onPress={handleLogin} />
+        <View style={styles.linksRow}>
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} accessibilityRole="button">
+            <Text style={styles.link}>Mot de passe oublié ?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.link}>Créer un compte</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Créer un compte</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -47,7 +52,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
   form: { gap: 12 },
   error: { color: '#d32f2f', marginBottom: 8 },
-  link: { marginTop: 16, textAlign: 'center', color: '#1976d2', fontWeight: '500' },
+  linksRow: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  link: { color: '#1976d2', fontWeight: '500' },
 });
 
 export default LoginScreen;
